@@ -1,7 +1,6 @@
 services:
   cash-dam-simulator:
     build: .
-    platform: linux/arm64
     ports:
       - "${PORT:-8080}:80"
     restart: unless-stopped
