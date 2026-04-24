@@ -211,34 +211,34 @@ export interface ValidationWarning {
  */
 export const DEFAULT_PARAMS: SimulationParams = {
   // Debt Stack
-  globalLimit: 1_490_953.91,
-  primaryMortgageStart: 1_086_000,
-  investmentMortgageStart: 455_920,
-  startingHelocBalance: 275_545.91,
+  globalLimit: 1_000_000,
+  primaryMortgageStart: 750_000,
+  investmentMortgageStart: 300_000,
+  startingHelocBalance: 50_000,
 
   // Borrowing Rates
-  primaryMortgageRate: 0.0365,
-  investmentMortgageRate: 0.05,
-  helocRate: 0.047,
+  primaryMortgageRate: 0.05,
+  investmentMortgageRate: 0.055,
+  helocRate: 0.065,
 
   // Income & Costs (monthly)
   expectedRent: 2_500,
-  condoFees: 610,
-  propertyTax: 240,
-  propertyManagementPct: 0.06,
-  insurance: 50,
+  condoFees: 500,
+  propertyTax: 250,
+  propertyManagementPct: 0.05,
+  insurance: 75,
   maintenance: 100,
 
   // Tax & Strategy
-  marginalTaxRate: 0.46,
+  marginalTaxRate: 0.43,
   reinvestTaxRefunds: true,
   equityBridgeEnabled: false,
 
   // Stress Test
   rateShockIncrease: 0,
-  shockStartYear: 3,
+  shockStartYear: 5,
 
   // Mortgage Term
-  amortizationYears: 30,
-  horizonYears: 30,
+  amortizationYears: 25,
+  horizonYears: 25,
 };
