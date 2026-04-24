@@ -6,7 +6,6 @@
   import TimeSeriesChart from './components/TimeSeriesChart.svelte';
   import RefundTable from './components/RefundTable.svelte';
   import AdvisoryCard from './components/AdvisoryCard.svelte';
-  import ThemeSelector from './components/ThemeSelector.svelte';
 
   let currentWarnings = $derived($warnings);
   let hasWarnings = $derived(currentWarnings.length > 0);
@@ -15,7 +14,6 @@
 <div class="app-layout">
   <header class="app-header">
     <h1 class="app-title">Cash Dam Simulator</h1>
-    <ThemeSelector />
   </header>
 
   {#if hasWarnings}
