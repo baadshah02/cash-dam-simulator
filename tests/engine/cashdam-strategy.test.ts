@@ -5,6 +5,36 @@ import { toMonthlyRate, calcFixedPayment } from '../../src/lib/engine/mortgage';
 
 describe('simulateCashDam', () => {
   // -----------------------------------------------------------------------
+  // Regression tests
+  // -----------------------------------------------------------------------
+  describe('regression: April refund payoff detection', () => {
+    it('records payoffMonth when the April tax refund clears the mortgage', () => {
+      // Scenario: with 30-year amortization and rent around $2200, the
+      // Cash Dam primary mortgage is cleared by the April refund applied
+      // from the previous year's accumulated deductions. Previously, the
+      // engine reduced primaryBalance to 0 in the April refund step but
+      // didn't record primaryPayoffMonth, leaving it as null even though
+      // the mortgage was paid off.
+      const params: SimulationParams = {
+        ...DEFAULT_PARAMS,
+        expectedRent: 2_200,
+        amortizationYears: 30,
+        horizonYears: 30,
+      };
+      const result = simulateCashDam(params);
+
+      // Mortgage should be paid off
+      expect(result.finalPrimaryBalance).toBeLessThan(1);
+      // And payoffMonth should be recorded (not null)
+      expect(result.payoffMonth).not.toBeNull();
+      // The recorded payoff month should have balance == 0
+      if (result.payoffMonth !== null) {
+        expect(result.monthlyRecords[result.payoffMonth - 1].primaryMortgageBalance).toBe(0);
+      }
+    });
+  });
+
+  // -----------------------------------------------------------------------
   // Structural invariants
   // -----------------------------------------------------------------------
   describe('structural invariants', () => {

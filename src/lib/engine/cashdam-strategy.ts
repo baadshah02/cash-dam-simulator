@@ -144,6 +144,10 @@ export function simulateCashDam(params: SimulationParams): CashDamResult {
         if (primaryBalance < 0.005) {
           primaryBalance = 0;
         }
+        // Record payoff if the refund cleared the mortgage
+        if (primaryBalance === 0 && primaryPayoffMonth === null) {
+          primaryPayoffMonth = m;
+        }
       }
     }
 
