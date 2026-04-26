@@ -19,6 +19,7 @@
 
 import type { SimulationParams, MonthlyRecord, AnnualRecord, CashDamResult } from './types';
 import { toMonthlyRate, calcFixedPayment } from './mortgage';
+import { computePayoffMetrics } from './payoff-metrics';
 
 /**
  * Simulate the Cash Dam Strategy over the full 16-year horizon.
@@ -391,6 +392,14 @@ export function simulateCashDam(params: SimulationParams): CashDamResult {
     revisedCollisionStatus = `Collision Year ${collisionYear} (Mo ${collisionMonth})`;
   }
 
+  const payoffMetrics = computePayoffMetrics(
+    monthlyRecords,
+    annualRecords,
+    primaryPayoffMonth,
+    params,
+    { cumulativeInterestPaid, cumulativeTaxesPaid, cumulativeTaxRefunds },
+  );
+
   return {
     monthlyRecords,
     annualRecords,
@@ -409,6 +418,10 @@ export function simulateCashDam(params: SimulationParams): CashDamResult {
     equityBridgeMonth,
     equityLiquidated,
     revisedCollisionStatus,
+    interestUntilPayoff: payoffMetrics.interestUntilPayoff,
+    taxesUntilPayoff: payoffMetrics.taxesUntilPayoff,
+    refundsUntilPayoff: payoffMetrics.refundsUntilPayoff,
+    rentalIncomeUntilPayoff: payoffMetrics.rentalIncomeUntilPayoff,
   };
 }
 

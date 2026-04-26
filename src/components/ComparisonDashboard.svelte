@@ -53,19 +53,26 @@
     payoffWin === 'a' ? 'Standard' : payoffWin === 'b' ? 'Cash Dam' : null
   );
 
-  // Taxes
-  let stdTaxes = $derived(data.standard.cumulativeTaxesPaid);
-  let cdTaxes = $derived(data.cashDam.cumulativeTaxesPaid);
+  // Metrics truncated to primary mortgage payoff (or full horizon if no payoff)
+  // These give a more meaningful comparison — users care about totals up to the
+  // point where they're "done" with the primary mortgage, not the arbitrary horizon.
+  let stdTaxes = $derived(data.standard.taxesUntilPayoff);
+  let cdTaxes = $derived(data.cashDam.taxesUntilPayoff);
   let taxWin = $derived(winnerLower(stdTaxes, cdTaxes));
   let netTaxSavings = $derived(stdTaxes - cdTaxes);
 
-  // Interest
-  let stdInterest = $derived(data.standard.cumulativeInterestPaid);
-  let cdInterest = $derived(data.cashDam.cumulativeInterestPaid);
+  let stdInterest = $derived(data.standard.interestUntilPayoff);
+  let cdInterest = $derived(data.cashDam.interestUntilPayoff);
   let interestWin = $derived(winnerLower(stdInterest, cdInterest));
 
-  // Cash Dam specifics
-  let cumulativeRefunds = $derived(data.cashDam.cumulativeTaxRefunds);
+  let stdRentalIncome = $derived(data.standard.rentalIncomeUntilPayoff);
+  let cdRentalIncome = $derived(data.cashDam.rentalIncomeUntilPayoff);
+
+  // Refunds (Cash Dam only — Standard has minimal refunds from investment interest)
+  let cumulativeRefunds = $derived(data.cashDam.refundsUntilPayoff);
+  let stdRefunds = $derived(data.standard.refundsUntilPayoff);
+
+  // HELOC specifics
   let helocBurnRate = $derived(data.cashDam.monthlyHelocBurnRate);
   let collisionMonth = $derived(data.cashDam.collisionMonth);
   let collisionYear = $derived(data.cashDam.collisionYear);
@@ -73,6 +80,14 @@
     collisionMonth !== null
       ? `Year ${collisionYear} (Month ${collisionMonth})`
       : 'Clear Runway'
+  );
+
+  // Label the timeframe: either "until payoff" or full horizon
+  let horizonYears = $derived(data.params.horizonYears);
+  let payoffContextLabel = $derived(
+    payoffWinnerLabel !== null
+      ? 'until primary mortgage payoff'
+      : `over ${horizonYears}-year horizon`
   );
 
   // Visibility
@@ -103,7 +118,7 @@
         <div class="hl-label">Net Tax Savings</div>
         {#if netTaxSavings > 0}
           <div class="hl-value accent-green">{fmtCurrency(netTaxSavings)}</div>
-          <div class="hl-detail">Saved with Cash Dam over 16 years</div>
+          <div class="hl-detail">Saved with Cash Dam {payoffContextLabel}</div>
         {:else if netTaxSavings < 0}
           <div class="hl-value accent-red">{fmtCurrency(Math.abs(netTaxSavings))}</div>
           <div class="hl-detail">More taxes with Cash Dam</div>
@@ -120,13 +135,15 @@
           {collisionMonth === null ? 'Clear' : `Year ${collisionYear}`}
         </div>
         <div class="hl-detail">
-          {collisionMonth === null ? 'No collision within 16-year horizon' : collisionStatus}
+          {collisionMonth === null ? `No collision within ${horizonYears}-year horizon` : collisionStatus}
         </div>
       </div>
     </div>
 
     <!-- ===== SECTION 2: SIDE-BY-SIDE BREAKDOWN ===== -->
-    <div class="section-label">Strategy Breakdown</div>
+    <div class="section-label">
+      Strategy Breakdown <span class="section-sublabel">— {payoffContextLabel}</span>
+    </div>
     <div class="breakdown-table">
       <div class="bt-header">
         <div class="bt-metric-header">Metric</div>
@@ -143,6 +160,13 @@
         <div class="bt-val" class:bt-winner={payoffWin === 'b'}>
           {fmtTimeline(cdPayoff, cdFinalBal)}
         </div>
+      </div>
+
+      <!-- Total Rental Income -->
+      <div class="bt-row">
+        <div class="bt-metric">Total Rental Income</div>
+        <div class="bt-val">{fmtCurrency(stdRentalIncome)}</div>
+        <div class="bt-val">{fmtCurrency(cdRentalIncome)}</div>
       </div>
 
       <!-- Total Interest Paid -->
@@ -170,7 +194,9 @@
       <!-- Cumulative Tax Refunds -->
       <div class="bt-row">
         <div class="bt-metric">Cumulative Tax Refunds</div>
-        <div class="bt-val bt-na">—</div>
+        <div class="bt-val">
+          {stdRefunds > 0 ? fmtCurrency(stdRefunds) : '—'}
+        </div>
         <div class="bt-val accent-green">{fmtCurrency(cumulativeRefunds)}</div>
       </div>
 
@@ -195,6 +221,13 @@
         </div>
         <div class="card">
           <div class="card-header">
+            <span class="card-label">Total Rental Income</span>
+            <span class="card-badge">Standard</span>
+          </div>
+          <div class="card-value">{fmtCurrency(stdRentalIncome)}</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
             <span class="card-label">Total Interest Paid</span>
             <span class="card-badge">Standard</span>
           </div>
@@ -216,6 +249,13 @@
             <span class="card-badge cashdam-badge">Cash Dam</span>
           </div>
           <div class="card-value">{fmtTimeline(cdPayoff, cdFinalBal)}</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-label">Total Rental Income</span>
+            <span class="card-badge cashdam-badge">Cash Dam</span>
+          </div>
+          <div class="card-value">{fmtCurrency(cdRentalIncome)}</div>
         </div>
         <div class="card">
           <div class="card-header">
@@ -273,6 +313,14 @@
     color: var(--color-text-muted);
     margin-bottom: 0.6rem;
     margin-top: 1.25rem;
+  }
+
+  .section-sublabel {
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--color-text-muted);
+    opacity: 0.8;
   }
 
   .section-label:first-child {

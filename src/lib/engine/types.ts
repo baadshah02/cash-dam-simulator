@@ -129,6 +129,12 @@ export interface StandardResult {
 
   // Net rental surplus: accumulated idle cash from rent minus operating costs minus investment payment
   cumulativeNetRentalSurplus: number;
+
+  // Totals accumulated up to primary mortgage payoff (or full horizon if never paid off)
+  interestUntilPayoff: number;
+  taxesUntilPayoff: number;
+  refundsUntilPayoff: number;
+  rentalIncomeUntilPayoff: number;
 }
 
 export interface CashDamResult {
@@ -155,6 +161,12 @@ export interface CashDamResult {
   equityBridgeMonth: number | null;
   equityLiquidated: number;
   revisedCollisionStatus: string;
+
+  // Totals accumulated up to primary mortgage payoff (or full horizon if never paid off)
+  interestUntilPayoff: number;
+  taxesUntilPayoff: number;
+  refundsUntilPayoff: number;
+  rentalIncomeUntilPayoff: number;
 }
 
 // ---------------------------------------------------------------------------

@@ -26,6 +26,7 @@
 
 import type { SimulationParams, MonthlyRecord, AnnualRecord, StandardResult } from './types';
 import { toMonthlyRate, calcFixedPayment } from './mortgage';
+import { computePayoffMetrics } from './payoff-metrics';
 
 export function simulateStandard(params: SimulationParams): StandardResult {
   const totalMonths = params.horizonYears * 12;
@@ -305,6 +306,14 @@ export function simulateStandard(params: SimulationParams): StandardResult {
   const cumulativeInterestPaid =
     cumulativePrimaryInterest + cumulativeInvestmentInterest + cumulativeHelocInterest;
 
+  const payoffMetrics = computePayoffMetrics(
+    monthlyRecords,
+    annualRecords,
+    primaryPayoffMonth,
+    params,
+    { cumulativeInterestPaid, cumulativeTaxesPaid, cumulativeTaxRefunds },
+  );
+
   return {
     monthlyRecords,
     annualRecords,
@@ -318,5 +327,9 @@ export function simulateStandard(params: SimulationParams): StandardResult {
     collisionYear,
     monthlyHelocBurnRate,
     cumulativeNetRentalSurplus,
+    interestUntilPayoff: payoffMetrics.interestUntilPayoff,
+    taxesUntilPayoff: payoffMetrics.taxesUntilPayoff,
+    refundsUntilPayoff: payoffMetrics.refundsUntilPayoff,
+    rentalIncomeUntilPayoff: payoffMetrics.rentalIncomeUntilPayoff,
   };
 }
