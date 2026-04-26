@@ -26,16 +26,47 @@
   }
 
   /**
-   * Extract year-end balances from monthly records.
-   * Index 0 = starting value (year 0), indices 1–16 = end of each year.
+   * Compute the effective endpoint year for a strategy — whichever is earlier:
+   *   - The year the primary mortgage pays off (rounded up)
+   *   - The full horizon
+   *
+   * This determines where the strategy's chart lines should end. After the primary
+   * mortgage pays off, the strategy's "life" is essentially done and continuing to
+   * plot post-payoff data doesn't reflect what the user cares about.
+   */
+  function effectiveEndpointYear(
+    payoffMonth: number | null,
+    finalBalance: number,
+    horizonYears: number,
+  ): number {
+    if (payoffMonth !== null) {
+      return Math.ceil(payoffMonth / 12);
+    }
+    // If final balance is effectively zero, treat it as paid off at the horizon
+    if (finalBalance < 100) {
+      return horizonYears;
+    }
+    return horizonYears;
+  }
+
+  /**
+   * Extract year-end balances from monthly records, truncated at the strategy's
+   * effective endpoint. Points past the endpoint are null, which ECharts renders
+   * as a line break (the line just ends).
    */
   function extractYearlyBalances(
     data: SimulationDataStore,
     strategy: 'standard' | 'cashDam',
     field: 'primaryMortgageBalance' | 'investmentMortgageBalance' | 'helocBalance' | 'helocLimit',
-  ): number[] {
-    const records = strategy === 'standard' ? data.standard.monthlyRecords : data.cashDam.monthlyRecords;
-    const values: number[] = [];
+  ): Array<number | null> {
+    const result = strategy === 'standard' ? data.standard : data.cashDam;
+    const records = result.monthlyRecords;
+    const endpointYear = effectiveEndpointYear(
+      result.payoffMonth,
+      result.finalPrimaryBalance,
+      data.params.horizonYears,
+    );
+    const values: Array<number | null> = [];
 
     // Year 0: starting value
     if (field === 'primaryMortgageBalance') {
@@ -48,9 +79,13 @@
       values.push(data.params.globalLimit - data.params.primaryMortgageStart);
     }
 
-    // Years 1–N: end-of-year values (month 12, 24, ..., horizonYears*12)
+    // Years 1–horizonYears: end-of-year values. Truncate at endpointYear.
     const horizonYears = data.params.horizonYears;
     for (let y = 1; y <= horizonYears; y++) {
+      if (y > endpointYear) {
+        values.push(null);
+        continue;
+      }
       const monthIndex = y * 12 - 1; // 0-based index
       if (monthIndex < records.length) {
         values.push(records[monthIndex][field]);
